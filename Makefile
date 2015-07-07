@@ -1,15 +1,15 @@
-include=-I../libGTF -I../htslib
-libs=../libGTF/libGTF.a ../htslib/libhts.a 
+include=-IlibGTF -IlibGTF/htslib
+libs=libGTF/libGTF.a libGTF/htslib/libhts.a 
 
 .PHONY: all htslib libGTF
 
 all: countRepeats
 
 htslib:
-	$(MAKE) -C ../htslib
+	$(MAKE) -C libGTF/htslib
 
 libGTF:
-	$(MAKE) -C ../libGTF
+	$(MAKE) -C libGTF
 
 countRepeats: htslib libGTF
 	gcc -g $(include) -o $@ cntHash.c EM.c countRepeats.c $(libs) -lz -lpthread -lpcre -lgsl -lm -lblas

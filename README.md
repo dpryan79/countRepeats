@@ -1,4 +1,5 @@
-N.B., this is unlikely to work yet, I just added the expectation-maximization code and haven't even tested it yet!
+**N.B., this is unlikely to work yet, I just added the expectation-maximization code and haven't even tested it yet!**
+**This is currently not yet in a usable state! Don't expect it to work.**
 
 `countRepeats` uses libGTF and HTSlib to process groups of alignments to the genome produced by STAR. STAR can be run as follows to produce up to 1000 alignments for each entry:
 
@@ -49,3 +50,14 @@ ddsName <- fromRepeats(sampleTable, type="repName", directory="~/", design=~Grou
 ```
 
 `repName` can alternatively be `repClass` or `repFamily`.
+
+== Installation ==
+
+You'll need to do the problem:
+
+    git clone https://github.com/dpryan79/countRepeats.git
+    cd countRepeats
+    git submodule update --init --recursive
+    make
+
+Note that you need [GSL](http://www.gnu.org/software/gsl/) installed.
