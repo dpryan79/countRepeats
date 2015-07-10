@@ -155,25 +155,29 @@ overlapsRepeats_struct *overlapsRepeats(GTFtree *t, bam_hdr_t *hdr, aList *al, i
     family = uniqueAttributes(os, "repFamily");
 
     //Update the counts (should do some expectation maximization...)
-    ops->l_Name = name->l;
-    ops->l_Class = class->l;
-    ops->l_Family = family->l;
     if(name) {
+        ops->l_Name = getVecLen(cntName);
+//        for(i=0; i<name->l; i++) fprintf(stderr, "[overlapsRepeats] name %s\n", name->ht->str[name->IDs[i]]);
         ops->c_Name = us2char(cntName, t->htAttributes, name, ops->l_Name);
     }
     if(class) {
+        ops->l_Class = getVecLen(cntClass);
+//        for(i=0; i<class->l; i++) fprintf(stderr, "[overlapsRepeats] class %s\n", class->ht->str[class->IDs[i]]);
         ops->c_Class = us2char(cntClass, t->htAttributes, class, ops->l_Class);
     }
     if(family) {
+        ops->l_Family = getVecLen(cntFamily);
+//        for(i=0; i<family->l; i++) fprintf(stderr, "[overlapsRepeats] family %s\n", family->ht->str[family->IDs[i]]);
         ops->c_Family = us2char(cntFamily, t->htAttributes, family, ops->l_Family);
     }
 
     //Clean up
-    if(os) os_destroy(os);
+//    if(os) os_destroy(os);
     if(osl) osl_destroy(osl);
-    if(name) us_destroy(name);
-    if(class) us_destroy(class);
-    if(family) us_destroy(family);
+//    if(name) us_destroy(name);
+//    if(class) us_destroy(class);
+//    if(family) us_destroy(family);
+//    fprintf(stderr, "[overlapsRepeats] Returning, name is %p (%s) \n", name, ((name && name->l)?name->ht->str[name->IDs[0]]:"empty"));
     return ops;
 }
 
@@ -252,7 +256,9 @@ static void *worker(void *p) {
     overlapsRepeats_struct *ops;
     uint32_t N = 0;
     cntTable *cntName, *cntFamily, *cntClass;
-    cntTable *hashName, *hashFamily, *hashClass;
+    cntTable *hashName = initCntTable(1);
+    cntTable *hashFamily = initCntTable(1);
+    cntTable *hashClass = initCntTable(1);
     GTFtree *genes = win->genes;
     GTFtree *repeats = win->repeats;
     htsFile *fp = win->fp;
@@ -260,6 +266,12 @@ static void *worker(void *p) {
     cntName = makeCntTable(repeats, repeats->htAttributes, "repName");
     cntClass = makeCntTable(repeats, repeats->htAttributes, "repClass");
     cntFamily = makeCntTable(repeats, repeats->htAttributes, "repFamily");
+    initCnts(hashName);
+    initCnts(hashClass);
+    initCnts(hashFamily);
+    int lName = getVecLen(cntName);
+    int lClass = getVecLen(cntClass);
+    int lFamily = getVecLen(cntFamily);
 
     while(1) {
         pthread_mutex_lock(&fp_lock);
@@ -269,17 +281,17 @@ static void *worker(void *p) {
         al_sort(al);
         if(!overlapsGenes(genes, hdr, al, cntTop(al), GTF_IGNORE_STRAND, GTF_MATCH_ANY)) {
             ops = overlapsRepeats(repeats, hdr, al, cntTop(al), GTF_IGNORE_STRAND, GTF_MATCH_ANY, cntName, cntClass, cntFamily);
-            if(ops->c_Name) {
+            if(ops->l_Name) {
                 N++;
-                pushIncCntTable(hashName, ops->c_Name, ops->l_Name);
+                pushIncCntTable(hashName, ops->c_Name, lName);
                 free(ops->c_Name);
             }
-            if(ops->c_Class) {
-                pushIncCntTable(hashClass, ops->c_Class, ops->l_Class);
+            if(ops->l_Class) {
+                pushIncCntTable(hashClass, ops->c_Class, lClass);
                 free(ops->c_Class);
             }
-            if(ops->c_Family) {
-                pushIncCntTable(hashFamily, ops->c_Family, ops->l_Family);
+            if(ops->l_Family) {
+                pushIncCntTable(hashFamily, ops->c_Family, lFamily);
                 free(ops->c_Family);
             }
             //Is everything actually free()d here?
@@ -308,7 +320,7 @@ int main(int argc, char *argv[]) {
     bam_hdr_t *hdr;
     GTFtree *genes = NULL, *repeats = NULL;
     aList *al;
-    int nThreads = 32;
+    int nThreads = 2;
     cntTable *cntName, *cntFamily, *cntClass;
     pthread_mutex_init(&fp_lock, NULL);
     pthread_mutex_init(&num_lock, NULL);

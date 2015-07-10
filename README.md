@@ -51,7 +51,8 @@ ddsName <- fromRepeats(sampleTable, type="repName", directory="~/", design=~Grou
 
 `repName` can alternatively be `repClass` or `repFamily`.
 
-== Installation ==
+Installation
+============
 
 You'll need to do the problem:
 
@@ -61,3 +62,8 @@ You'll need to do the problem:
     make
 
 Note that you need [GSL](http://www.gnu.org/software/gsl/) installed.
+
+Issues
+======
+
+ [ ] `uniqueAttributes()` doesn't return NULL as it should when the output is of length 0!

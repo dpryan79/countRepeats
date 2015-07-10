@@ -55,10 +55,10 @@ static void growHT2(hashTable *ht, int len) {
 }
 
 int32_t addHTelement2(hashTable *ht, char *s, int len) {
-    uint64_t hash = hashString2(s, len);
     int32_t val = ht->l++;
-    if(ht->l >= ht->m) growHT2(ht, len);
-    ht->str[val] = strndup(s, len);
+    ht->str[val] = malloc(len);
+    ht->str[val] = memcpy(ht->str[val], s, len);
+    uint64_t hash = hashString2(ht->str[val], len);
 
     hashTableElement *e = calloc(1, sizeof(hashTableElement));
     assert(e);
@@ -88,21 +88,28 @@ int32_t str2valHT2(hashTable *ht, char *s, int len) {
 }
 
 void growCntTable(cntTable *ct, int len) {
+    int32_t m_start = ct->ht->m;
     growHT2(ct->ht, len);
+    assert(ct->ht->m > m_start); //For some reason, ct->ht->m isn't getting incremented outside of growHT2!?!
     ct->cnts = realloc(ct->cnts, sizeof(uint32_t)*(ct->ht->m));
     assert(ct->cnts);
     int i;
     for(i=ct->ht->l; i<ct->ht->m; i++) ct->cnts[i] = 0;
+    assert(ct->cnts);
 }
 
 void pushIncCntTable(cntTable *ct, char *s, int len) {
     int32_t idx;
+    assert(ct);
+    assert(s);
     if(strExistsHT2(ct->ht, s, len)) {
         idx = str2valHT2(ct->ht, s, len);
         ct->cnts[idx]++;
     } else {
         //Grow if needed
-        if(ct->ht->l+1 >= ct->ht->m) growCntTable(ct, len);
+        assert(ct->cnts);
+        if(ct->ht->l+1 > ct->ht->m) growCntTable(ct, len);
+        assert(ct->cnts);
         idx = addHTelement2(ct->ht, s, len);
         ct->cnts[idx] = 1;
     }
@@ -138,7 +145,7 @@ char *us2char(cntTable *ct, hashTable *ht, uniqueSet *us, int len) {
 }
 
 int getVecLen(cntTable *ct) {
-    return ct->ht->l>>3+(ct->ht->l&7)?1:0;
+    return (ct->ht->l>>3)+((ct->ht->l&7)?1:0);
 }
 
 //l is the output of getVecLen()
